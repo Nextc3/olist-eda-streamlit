@@ -1,0 +1,15 @@
+# Ambiente virtual
+.venv/
+
+# Cache Python
+__pycache__/
+*.pyc
+
+# Dados brutos (opcional, mas recomendado)
+data/raw/
+
+# Sistema
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/  
