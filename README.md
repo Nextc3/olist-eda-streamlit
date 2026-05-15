@@ -39,17 +39,26 @@ perguntas como:
 - KPIs com comparação temporal
 - Recomendações automáticas condicionadas a critérios estatísticos
 - Resumo interpretativo
+- **Design de Storytelling**: Métricas destacadas com CSS customizado para focar no que importa.
 
 ### 🔎 Análise Exploratória (dinâmica)
 - Séries temporais normalizadas
 - Mix de pagamento
 - Correlações entre métricas
+- **Gráficos Aprimorados**: Uso de templates Plotly otimizados para clareza e impacto visual.
 
 ### 🧪 Aspectos Técnicos (global + dinâmico)
 - Tendências globais (2017–2018)
 - Tendências locais por período selecionado
 - Limitações metodológicas
 - Glossário técnico
+
+---
+
+## 🛠️ Arquitetura do Código
+O projeto adota uma estrutura modular:
+- `app.py`: Interface de usuário, visualização e narrativa de dados.
+- `utils.py`: Funções auxiliares (formatação, cálculos estatísticos e de delta) para manter a organização e escalabilidade do código.
 
 ---
 

@@ -2,14 +2,42 @@ import streamlit as st
 import pandas as pd
 from pathlib import Path
 import plotly.express as px
-
+import numpy as np
+from scipy.stats import linregress
+from utils import (
+    format_int, format_money, format_pct, delta, 
+    interpret_change, interpret_corr, trend_local, interpret_trend
+)
 # -----------------------
 # Config
 # -----------------------
 st.set_page_config(
     page_title="Olist (2016–2018) — Análise Temporal",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
+
+st.markdown("""
+<style>
+    /* Custom metric cards */
+    div[data-testid="stMetric"] {
+        background-color: #FFFFFF;
+        border-radius: 10px;
+        padding: 15px 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        border: 1px solid #EAEAEA;
+        transition: transform 0.2s ease-in-out;
+    }
+    div[data-testid="stMetric"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 10px rgba(0,0,0,0.1);
+    }
+    
+    /* Hide top menu and footer for cleaner app feel */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+</style>
+""", unsafe_allow_html=True)
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_PROCESSED = BASE_DIR / "data" / "processed"
@@ -93,14 +121,7 @@ df_f = df[(df["year_month"] >= period[0]) & (df["year_month"] <= period[1])].cop
 # -----------------------
 # KPIs Executivos (com delta)
 # -----------------------
-def format_int(n): 
-    return f"{int(n):,}".replace(",", ".")
 
-def format_money(n):
-    return f"{float(n):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-
-def format_pct(x):
-    return f"{x*100:.2f}%".replace(".", ",")
 
 # período atual (selecionado)
 cur_orders = df_f["orders_delivered"].sum()
@@ -126,10 +147,7 @@ if has_prev:
 else:
     prev_orders = prev_gmv = prev_ticket = prev_cancel = None
 
-def delta(cur, prev):
-    if prev is None or prev == 0:
-        return None
-    return (cur - prev) / prev
+
 
 d_orders = delta(cur_orders, prev_orders)
 d_ticket = delta(cur_ticket, prev_ticket)
@@ -192,18 +210,7 @@ Esse critério garante comparabilidade temporal e evita conclusões frágeis.
 # -----------------------
 
 
-def interpret_change(pct):
-    if pct is None:
-        return None
-    if pct >= 0.10:
-        return "alta"
-    if pct >= 0.03:
-        return "leve alta"
-    if pct <= -0.10:
-        return "queda"
-    if pct <= -0.03:
-        return "leve queda"
-    return "estável"
+
 
 if not has_prev:
     st.info(
@@ -272,29 +279,7 @@ if modo_apresentacao:
 """)
 
 
-def interpret_corr(r):
-    if abs(r) < 0.2:
-        return "Correlação muito fraca ou inexistente"
-    if abs(r) < 0.4:
-        return "Correlação fraca"
-    if abs(r) < 0.6:
-        return "Correlação moderada"
-    if abs(r) < 0.8:
-        return "Correlação forte"
-    return "Correlação muito forte"
 
-import numpy as np
-from scipy.stats import linregress
-
-def trend_local(series):
-    x = np.arange(len(series))
-    slope, intercept, r, p_value, se = linregress(x, series)
-    return slope, p_value
-
-def interpret_trend(slope, p_value, alpha=0.05):
-    if p_value >= alpha:
-        return "Estável (sem tendência estatisticamente significativa)"
-    return "Tendência de crescimento estatisticamente significativa" if slope > 0 else "Tendência de queda estatisticamente significativa"
 
 
 tab1, tab2, tab3 = st.tabs(["📊 Executivo", "🔎 Analítico", "🧪 Técnico"])
@@ -335,8 +320,6 @@ with tab2:
         "normalizando a média de 2017 como base 100."
     )
 
-    import plotly.express as px
-
     idx_df = df_f[[
         "year_month",
         "ticket_index",
@@ -362,19 +345,23 @@ with tab2:
         y="Índice",
         color="Métrica",
         markers=True,
-        title="Evolução relativa das métricas (base 2017 = 100)"
+        title="<b>Evolução relativa das métricas</b> (base 2017 = 100)",
+        template="plotly_white",
+        color_discrete_sequence=px.colors.qualitative.Pastel
     )
 
     fig_idx.update_layout(
         xaxis_title="Mês",
-        yaxis_title="Índice"
+        yaxis_title="Índice",
+        hovermode="x unified",
+        title_font_size=20,
+        legend_title_text="",
+        margin=dict(l=0, r=0, t=50, b=0)
     )
+    fig_idx.update_traces(line=dict(width=3), marker=dict(size=8))
 
     st.plotly_chart(fig_idx, use_container_width=True)
 
-    # =====================================================
-    # 2) Mix de pagamento
-    # =====================================================
     # =====================================================
     # 2) Mix de pagamento
     # =====================================================
@@ -399,14 +386,21 @@ with tab2:
         y="Participação",
         color="Tipo",
         markers=True,
-        title="Participação por tipo de pagamento"
+        title="<b>Participação por tipo de pagamento</b>",
+        template="plotly_white",
+        color_discrete_sequence=["#2E86C1", "#E74C3C"]
     )
 
     fig_pay.update_layout(
         xaxis_title="Mês",
-        yaxis_title="Participação"
+        yaxis_title="Participação",
+        hovermode="x unified",
+        title_font_size=20,
+        legend_title_text="",
+        margin=dict(l=0, r=0, t=50, b=0)
     )
     fig_pay.update_yaxes(tickformat=".0%")
+    fig_pay.update_traces(line=dict(width=3), marker=dict(size=8))
 
     st.plotly_chart(fig_pay, use_container_width=True)
 
